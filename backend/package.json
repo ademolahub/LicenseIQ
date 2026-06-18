@@ -6,7 +6,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:storage": "tsx --eval \"process.env.MOCK_MODE='true'; require('./src/runStorageTests.ts')\""
   },
   "dependencies": {
     "@azure/data-tables": "^13.2.2",

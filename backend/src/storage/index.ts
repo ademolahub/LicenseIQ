@@ -1,0 +1,8 @@
+export * from './types'
+export * from './factory'
+export { MockTablesClient } from './mock/mockTablesClient'
+export { MockBlobsClient } from './mock/mockBlobsClient'
+export { MockQueueClient } from './mock/mockQueueClient'
+export { AzureTablesClient } from './azure/azureTablesClient'
+export { AzureBlobsClient } from './azure/azureBlobsClient'
+export { AzureQueueClient } from './azure/azureQueueClient'
