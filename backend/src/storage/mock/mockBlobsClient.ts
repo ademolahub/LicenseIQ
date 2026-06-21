@@ -6,7 +6,7 @@ import { BlobsClient } from '../types'
  */
 export class MockBlobsClient implements BlobsClient {
   private assessmentsContainer: Map<string, string> = new Map()
-  private reportsContainer: Map<string, string> = new Map()
+  private reportsContainer: Map<string, Buffer> = new Map()
 
   async uploadAssessment(assessmentId: string, data: string): Promise<void> {
     this.assessmentsContainer.set(assessmentId, data)
@@ -16,11 +16,15 @@ export class MockBlobsClient implements BlobsClient {
     return this.assessmentsContainer.get(assessmentId) || null
   }
 
-  async uploadReport(reportId: string, data: string): Promise<void> {
+  async uploadReport(reportId: string, data: Buffer): Promise<void> {
     this.reportsContainer.set(reportId, data)
   }
 
-  async getReport(reportId: string): Promise<string | null> {
+  async getReport(reportId: string): Promise<Buffer | null> {
     return this.reportsContainer.get(reportId) || null
+  }
+
+  async getReportUrl(reportId: string): Promise<string> {
+    return `mock://reports/${reportId}`
   }
 }

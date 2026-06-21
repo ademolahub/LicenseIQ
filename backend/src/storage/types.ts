@@ -55,8 +55,9 @@ export interface TablesClient {
 export interface BlobsClient {
   uploadAssessment(assessmentId: string, data: string): Promise<void>
   getAssessment(assessmentId: string): Promise<string | null>
-  uploadReport(reportId: string, data: string): Promise<void>
-  getReport(reportId: string): Promise<string | null>
+  uploadReport(reportId: string, data: Buffer): Promise<void>
+  getReport(reportId: string): Promise<Buffer | null>
+  getReportUrl(reportId: string, expiresInSeconds?: number): Promise<string>
 }
 
 export interface QueueClient {

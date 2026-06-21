@@ -1,4 +1,4 @@
-import { ContainerClient, StorageSharedKeyCredential } from '@azure/storage-blob'
+import { BlobSASPermissions, ContainerClient, generateBlobSASQueryParameters, SASProtocol, StorageSharedKeyCredential } from '@azure/storage-blob'
 import { BlobsClient } from '../types'
 
 /**
@@ -8,9 +8,10 @@ import { BlobsClient } from '../types'
 export class AzureBlobsClient implements BlobsClient {
   private assessmentsContainer: ContainerClient
   private reportsContainer: ContainerClient
+  private accountName: string
+  private accountKey: string
 
   constructor(connectionString: string) {
-    // Parse connection string to get account name and key
     const accountMatch = connectionString.match(/AccountName=([^;]+)/)
     const keyMatch = connectionString.match(/AccountKey=([^;]+)/)
 
@@ -22,13 +23,15 @@ export class AzureBlobsClient implements BlobsClient {
     const accountKey = keyMatch[1]
     const credential = new StorageSharedKeyCredential(accountName, accountKey)
 
+    this.accountName = accountName
+    this.accountKey = accountKey
     this.assessmentsContainer = new ContainerClient(
       `https://${accountName}.blob.core.windows.net/assessments`,
-      credential
+      credential,
     )
     this.reportsContainer = new ContainerClient(
       `https://${accountName}.blob.core.windows.net/reports`,
-      credential
+      credential,
     )
   }
 
@@ -40,9 +43,8 @@ export class AzureBlobsClient implements BlobsClient {
   async getAssessment(assessmentId: string): Promise<string | null> {
     try {
       const blockBlobClient = this.assessmentsContainer.getBlockBlobClient(assessmentId)
-      const downloadBlockBlobResponse = await blockBlobClient.download(0)
-      const downloadedData = await this.streamToString(downloadBlockBlobResponse.readableStreamBody!)
-      return downloadedData
+      const downloadedData = await blockBlobClient.downloadToBuffer()
+      return downloadedData.toString('utf-8')
     } catch (error: unknown) {
       if (error instanceof Error && 'code' in error && (error as any).code === 'BlobNotFound') {
         return null
@@ -51,17 +53,15 @@ export class AzureBlobsClient implements BlobsClient {
     }
   }
 
-  async uploadReport(reportId: string, data: string): Promise<void> {
+  async uploadReport(reportId: string, data: Buffer): Promise<void> {
     const blockBlobClient = this.reportsContainer.getBlockBlobClient(reportId)
-    await blockBlobClient.upload(Buffer.from(data, 'utf-8'), Buffer.from(data, 'utf-8').length)
+    await blockBlobClient.uploadData(data)
   }
 
-  async getReport(reportId: string): Promise<string | null> {
+  async getReport(reportId: string): Promise<Buffer | null> {
     try {
       const blockBlobClient = this.reportsContainer.getBlockBlobClient(reportId)
-      const downloadBlockBlobResponse = await blockBlobClient.download(0)
-      const downloadedData = await this.streamToString(downloadBlockBlobResponse.readableStreamBody!)
-      return downloadedData
+      return await blockBlobClient.downloadToBuffer()
     } catch (error: unknown) {
       if (error instanceof Error && 'code' in error && (error as any).code === 'BlobNotFound') {
         return null
@@ -70,16 +70,21 @@ export class AzureBlobsClient implements BlobsClient {
     }
   }
 
-  private async streamToString(readableStream: NodeJS.ReadableStream): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const chunks: string[] = []
-      readableStream.on('data', (data: Buffer) => {
-        chunks.push(data.toString('utf8'))
-      })
-      readableStream.on('end', () => {
-        resolve(chunks.join(''))
-      })
-      readableStream.on('error', reject)
-    })
+  async getReportUrl(reportId: string, expiresInSeconds = 3600): Promise<string> {
+    const expiresOn = new Date(Date.now() + expiresInSeconds * 1000)
+    const sasToken = generateBlobSASQueryParameters(
+      {
+        containerName: 'reports',
+        blobName: reportId,
+        permissions: BlobSASPermissions.parse('r'),
+        protocol: SASProtocol.Https,
+        startsOn: new Date(Date.now() - 5 * 60 * 1000),
+        expiresOn,
+      },
+      new StorageSharedKeyCredential(this.accountName, this.accountKey),
+    ).toString()
+
+    return `https://${this.accountName}.blob.core.windows.net/reports/${reportId}?${sasToken}`
   }
+
 }

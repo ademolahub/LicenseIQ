@@ -110,11 +110,11 @@ async function testBlobsRoundTrip() {
 
   // Test Report blob
   const reportId = uuidv4()
-  const reportData = JSON.stringify({
+  const reportData = Buffer.from(JSON.stringify({
     reportId,
     format: 'pdf',
     pages: 10,
-  })
+  }))
 
   await blobsClient.uploadReport(reportId, reportData)
   const retrievedReport = await blobsClient.getReport(reportId)
@@ -122,7 +122,7 @@ async function testBlobsRoundTrip() {
   if (!retrievedReport) {
     throw new Error('Report blob write-read failed')
   }
-  const parsedReport = JSON.parse(retrievedReport)
+  const parsedReport = JSON.parse(retrievedReport.toString('utf-8'))
   if (parsedReport.pages !== 10) {
     throw new Error('Report blob data corruption')
   }

@@ -8,7 +8,8 @@ import { tenantRecommendationSettings } from './tenantSettings'
 import { calculateHealthScore } from './healthScore'
 import { sumRecommendationSavings } from './savingsCalculator'
 import { getStorageClients } from './storage'
-import { AssessmentRunListItem, AssessmentStatus, StartAssessmentResponse } from '../../shared/types'
+import { renderAssessmentPdf } from './reportRenderer'
+import { AssessmentRunListItem, AssessmentStatus, GenerateReportResponse, StartAssessmentResponse } from '../../shared/types'
 
 const logger = pino({
   level: config.LOG_LEVEL,
@@ -216,39 +217,23 @@ app.post('/api/reports/generate', async (req: Request, res: Response) => {
     }
 
     const snapshot = JSON.parse(assessmentJson)
-    const reportId = `report-${runId}`
-    const reportBody = JSON.stringify({
-      generatedAt: new Date().toISOString(),
-      runId: snapshot.runId,
-      tenantId: snapshot.tenantId,
-      tenantName: snapshot.tenantName,
-      status: snapshot.status,
-      createdAt: snapshot.createdAt,
-      completedAt: snapshot.completedAt,
-      summary: snapshot.summary,
-      healthScore: snapshot.healthScore,
-      recommendations: snapshot.recommendations.map((recommendation: any) => ({
-        id: recommendation.id,
-        title: recommendation.title,
-        type: recommendation.type,
-        estMonthlySavingsUSD: recommendation.estMonthlySavingsUSD,
-        annualSavingsUSD: recommendation.annualSavingsUSD,
-        affectedUserCount: recommendation.affectedUserCount,
-      })),
-    }, null, 2)
+    const reportId = `report-${runId}.pdf`
+    const pdfBuffer = await renderAssessmentPdf(snapshot)
 
-    await storage.blobs.uploadReport(reportId, reportBody)
+    await storage.blobs.uploadReport(reportId, pdfBuffer)
 
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60).toISOString()
-    const reportUrl = config.MOCK_MODE ? `mock://reports/${reportId}` : `reports/${reportId}`
+    const reportUrl = await storage.blobs.getReportUrl(reportId, 3600)
+
+    const response: GenerateReportResponse = {
+      runId,
+      reportUrl,
+      expiresAt,
+    }
 
     return res.json({
       success: true,
-      data: {
-        runId,
-        reportUrl,
-        expiresAt,
-      },
+      data: response,
     })
   } catch (error) {
     logger.error({ err: error }, 'Failed to generate report')
@@ -263,7 +248,9 @@ app.get('/api/reports/:reportId', async (req: Request, res: Response) => {
     if (!reportBody) {
       return res.status(404).json({ success: false, error: 'Report not found' })
     }
-    return res.type('application/json').send(reportBody)
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('Content-Disposition', `inline; filename="${reportId}"`)
+    return res.send(reportBody)
   } catch (error) {
     logger.error({ err: error }, 'Failed to fetch report')
     return res.status(500).json({ success: false, error: 'Failed to fetch report' })
