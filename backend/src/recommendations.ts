@@ -88,7 +88,13 @@ function sumOverprovisionSavings(users: GraphUser[], settings: TenantRecommendat
 
     const costs = user.assignedLicenses
       .map((license) => getPricingForSku(settings, license.skuId))
-      .filter((pricing): pricing is { monthlyUSD: number } => Boolean(pricing))
+      .filter(
+        (pricing): pricing is {
+          skuId: string
+          skuName: string
+          monthlyUSD: number
+        } => Boolean(pricing),
+      )
       .map((pricing) => pricing.monthlyUSD)
 
     if (costs.length < user.assignedLicenses.length) {
@@ -103,7 +109,7 @@ function sumOverprovisionSavings(users: GraphUser[], settings: TenantRecommendat
 }
 
 function buildInactiveUserRecommendation(users: GraphUser[], settings: TenantRecommendationSettings) {
-  const cutoff = defaultSettings.inactiveDaysThreshold
+  const cutoff = settings.inactiveDaysThreshold ?? defaultSettings.inactiveDaysThreshold
   const staleDate = Date.now() - cutoff * 24 * 60 * 60 * 1000
 
   const affected = users.filter((user) =>
