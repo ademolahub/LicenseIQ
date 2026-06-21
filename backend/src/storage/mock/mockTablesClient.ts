@@ -25,6 +25,10 @@ export class MockTablesClient implements TablesClient {
     return this.assessmentsIndexTable.get(runId) || null
   }
 
+  async listAssessmentIndexes(): Promise<AssessmentIndexEntity[]> {
+    return Array.from(this.assessmentsIndexTable.values())
+  }
+
   async upsertTenantSettings(entity: TenantSettingsEntity): Promise<void> {
     const key = `${entity.tenantId}|${entity.settingKey}`
     this.tenantSettingsTable.set(key, entity)
@@ -33,5 +37,10 @@ export class MockTablesClient implements TablesClient {
   async getTenantSettings(tenantId: string, settingKey: string): Promise<TenantSettingsEntity | null> {
     const key = `${tenantId}|${settingKey}`
     return this.tenantSettingsTable.get(key) || null
+  }
+
+  async listTenantSettings(tenantId?: string): Promise<TenantSettingsEntity[]> {
+    const allSettings = Array.from(this.tenantSettingsTable.values())
+    return tenantId ? allSettings.filter((entity) => entity.tenantId === tenantId) : allSettings
   }
 }

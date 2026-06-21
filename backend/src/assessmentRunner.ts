@@ -34,7 +34,7 @@ function buildSkus(): GraphSku[] {
   }))
 }
 
-function buildSummary(users: ReturnType<typeof getMockUsers>, savings: { monthlyUSD: number; annualUSD: number }): AssessmentSummary {
+function buildSummary(users: ReturnType<typeof getMockUsers>, savings: { estMonthlySavingsUSD: number; annualSavingsUSD: number }): AssessmentSummary {
   const totalLicenses = users.reduce((sum, user) => sum + user.assignedLicenses.length, 0) +
     Object.values(tenantRecommendationSettings.unassignedLicenseCounts ?? {}).reduce((sum, value) => sum + value, 0)
   const assignedLicenses = users.reduce((sum, user) => sum + user.assignedLicenses.length, 0)
@@ -56,8 +56,8 @@ function buildSummary(users: ReturnType<typeof getMockUsers>, savings: { monthly
     disabledWithLicense,
     guestsWithLicense,
     unassignedSeats,
-    totalMonthlySavingsUSD: savings.monthlyUSD,
-    totalAnnualSavingsUSD: savings.annualUSD,
+    totalMonthlySavingsUSD: savings.estMonthlySavingsUSD,
+    totalAnnualSavingsUSD: savings.annualSavingsUSD,
   }
 }
 
@@ -87,7 +87,7 @@ export async function runAssessment(tenantId: string, runId?: string): Promise<A
     disabledWithLicense: users.filter((user) => !user.accountEnabled && user.assignedLicenses.length > 0).length,
     guestsWithLicense: users.filter((user) => user.userType === 'Guest' && user.assignedLicenses.length > 0).length,
     unassignedSeats: Object.values(tenantRecommendationSettings.unassignedLicenseCounts ?? {}).reduce((sum, value) => sum + value, 0),
-    totalMonthlySavingsUSD: savings.monthlyUSD,
+    totalMonthlySavingsUSD: savings.estMonthlySavingsUSD,
     recommendations,
   })
 
@@ -107,8 +107,8 @@ export async function runAssessment(tenantId: string, runId?: string): Promise<A
     signInActivityAvailable: true,
     timestamp,
     savings: {
-      monthlyUSD: savings.monthlyUSD,
-      annualUSD: savings.annualUSD,
+      monthlyUSD: savings.estMonthlySavingsUSD,
+      annualUSD: savings.annualSavingsUSD,
     },
   }
 

@@ -48,6 +48,14 @@ export class AzureTablesClient implements TablesClient {
     }
   }
 
+  async listAssessmentIndexes(): Promise<AssessmentIndexEntity[]> {
+    const records: AssessmentIndexEntity[] = []
+    for await (const entity of this.assessmentsIndexTable.listEntities<AssessmentIndexEntity>()) {
+      records.push(entity)
+    }
+    return records
+  }
+
   async upsertTenantSettings(entity: TenantSettingsEntity): Promise<void> {
     const partitionKey = entity.tenantId
     const rowKey = entity.settingKey
@@ -69,5 +77,15 @@ export class AzureTablesClient implements TablesClient {
       }
       throw error
     }
+  }
+
+  async listTenantSettings(tenantId?: string): Promise<TenantSettingsEntity[]> {
+    const records: TenantSettingsEntity[] = []
+    for await (const entity of this.tenantSettingsTable.listEntities<TenantSettingsEntity>()) {
+      if (!tenantId || entity.tenantId === tenantId) {
+        records.push(entity)
+      }
+    }
+    return records
   }
 }

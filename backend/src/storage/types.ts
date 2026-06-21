@@ -46,8 +46,10 @@ export interface TablesClient {
   getTenant(tenantId: string): Promise<TenantEntity | null>
   upsertAssessmentIndex(entity: AssessmentIndexEntity): Promise<void>
   getAssessmentIndex(runId: string): Promise<AssessmentIndexEntity | null>
+  listAssessmentIndexes(): Promise<AssessmentIndexEntity[]>
   upsertTenantSettings(entity: TenantSettingsEntity): Promise<void>
   getTenantSettings(tenantId: string, settingKey: string): Promise<TenantSettingsEntity | null>
+  listTenantSettings(tenantId?: string): Promise<TenantSettingsEntity[]>
 }
 
 export interface BlobsClient {
