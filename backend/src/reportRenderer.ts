@@ -1,4 +1,11 @@
-import puppeteer from 'puppeteer'
+import { existsSync } from 'fs'
+import { rm } from 'fs/promises'
+import { spawn, ChildProcessWithoutNullStreams } from 'child_process'
+import { createServer } from 'net'
+import { join } from 'path'
+import { tmpdir } from 'os'
+import { randomUUID } from 'crypto'
+import puppeteer, { Browser, ConnectOptions } from 'puppeteer'
 import { AssessmentSnapshot } from '../../shared/types'
 
 function renderValue(value: unknown, fallback = 'N/A'): string {
@@ -121,15 +128,156 @@ function buildHtml(snapshot: AssessmentSnapshot): string {
 </html>`
 }
 
-export async function renderAssessmentPdf(snapshot: AssessmentSnapshot): Promise<Buffer> {
-  const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] })
+const localBrowserPaths = [
+  'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
+  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+]
+
+function resolveBrowserExecutable(): string | undefined {
+  for (const path of localBrowserPaths) {
+    if (existsSync(path)) {
+      return path
+    }
+  }
+  return undefined
+}
+
+async function cleanupTempProfile(profilePath: string): Promise<void> {
   try {
-    const page = await browser.newPage()
+    await rm(profilePath, { recursive: true, force: true })
+  } catch {
+    // best-effort cleanup only
+  }
+}
+
+function findFreePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = createServer()
+    server.unref()
+    server.on('error', reject)
+    server.listen(0, () => {
+      const address = server.address()
+      if (address && typeof address !== 'string') {
+        const port = address.port
+        server.close(() => resolve(port))
+      } else {
+        reject(new Error('Could not determine free port'))
+      }
+    })
+  })
+}
+
+async function launchRemoteBrowser(executablePath: string, userDataDir: string): Promise<{ browser: Browser, process: ChildProcessWithoutNullStreams }> {
+  const port = await findFreePort()
+  const args = [
+    '--headless=new',
+    '--remote-debugging-port=' + port,
+    '--user-data-dir=' + userDataDir,
+    '--no-first-run',
+    '--no-default-browser-check',
+    '--disable-background-networking',
+    '--disable-background-timer-throttling',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-renderer-backgrounding',
+    '--mute-audio',
+    '--disable-gpu',
+    '--disable-software-rasterizer',
+    '--disable-extensions',
+    '--disable-popup-blocking',
+    '--disable-translate',
+    'about:blank',
+  ]
+
+  const child = spawn(executablePath, args, { stdio: ['ignore', 'pipe', 'pipe'] })
+
+  return new Promise((resolve, reject) => {
+    let stderr = ''
+    let finished = false
+    const timeout = setTimeout(() => {
+      child.kill()
+      if (!finished) {
+        reject(new Error(`Browser failed to start in time. stderr: ${stderr}`))
+      }
+    }, 10000)
+
+    child.stderr.on('data', (chunk) => { stderr += chunk.toString() })
+    child.stdout.on('data', () => {})
+    child.on('error', (err) => {
+      clearTimeout(timeout)
+      if (!finished) {
+        finished = true
+        reject(err)
+      }
+    })
+
+    const check = () => {
+      const net = require('net')
+      const socket = net.createConnection(port, '127.0.0.1')
+      socket.on('connect', async () => {
+        socket.destroy()
+        if (!finished) {
+          finished = true
+          clearTimeout(timeout)
+          try {
+            const browser = await puppeteer.connect({ browserURL: `http://127.0.0.1:${port}` })
+            resolve({ browser, process: child })
+          } catch (err) {
+            reject(err)
+          }
+        }
+      })
+      socket.on('error', () => setTimeout(check, 100))
+    }
+
+    check()
+  })
+}
+
+export async function renderAssessmentPdf(snapshot: AssessmentSnapshot): Promise<Buffer> {
+  const executablePath = resolveBrowserExecutable()
+  const userDataDir = join(tmpdir(), `licenseiq-puppeteer-${randomUUID()}`)
+  let browser: Browser | undefined
+  let childProcess: ChildProcessWithoutNullStreams | undefined
+
+  try {
+    if (executablePath) {
+      const launched = await launchRemoteBrowser(executablePath, userDataDir)
+      browser = launched.browser
+      childProcess = launched.process
+    } else {
+      browser = await puppeteer.launch({
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-background-networking',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--mute-audio',
+          '--single-process',
+        ],
+        userDataDir,
+      })
+    }
+
+    const page = await browser!.newPage()
     const html = buildHtml(snapshot)
     await page.setContent(html, { waitUntil: 'networkidle0' })
     const pdf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '16px', right: '16px', bottom: '16px', left: '16px' } })
     return pdf
   } finally {
-    await browser.close()
+    try {
+      if (browser) {
+        await browser.close()
+      }
+    } catch {
+      // ignore
+    }
+    if (childProcess) {
+      childProcess.kill()
+    }
+    await cleanupTempProfile(userDataDir)
   }
 }

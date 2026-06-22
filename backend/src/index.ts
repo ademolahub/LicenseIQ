@@ -8,6 +8,7 @@ import { tenantRecommendationSettings } from './tenantSettings'
 import { calculateHealthScore } from './healthScore'
 import { sumRecommendationSavings } from './savingsCalculator'
 import { getStorageClients } from './storage'
+import { runAssessment } from './assessmentRunner'
 import { renderAssessmentPdf } from './reportRenderer'
 import { AssessmentRunListItem, AssessmentStatus, GenerateReportResponse, StartAssessmentResponse } from '../../shared/types'
 
@@ -83,6 +84,18 @@ app.post('/api/assessments/start', async (req: Request, res: Response) => {
 
     const runId = uuidv4()
     const createdAt = new Date().toISOString()
+
+    if (config.MOCK_MODE) {
+      const snapshot = await runAssessment(tenantId, runId)
+
+      const response: StartAssessmentResponse = {
+        runId,
+        tenantId,
+        status: 'complete',
+      }
+
+      return res.status(200).json({ success: true, data: response, snapshot })
+    }
 
     await storage.tables.upsertAssessmentIndex({
       partitionKey: runId,
