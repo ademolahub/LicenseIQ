@@ -204,3 +204,90 @@ a {
 .button:hover {
   opacity: 0.95;
 }
+
+.button-large {
+  padding: 16px 32px;
+  font-size: 1.05rem;
+}
+
+.card-warning {
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.28);
+  color: var(--color-text);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-warning strong {
+  color: #fbbf24;
+}
+
+.card-info {
+  background: rgba(79, 142, 247, 0.12);
+  border-color: rgba(79, 142, 247, 0.28);
+  color: var(--color-text);
+}
+
+.card-info h3 {
+  margin-bottom: 12px;
+  color: var(--color-accent-alt);
+}
+
+.permissions-list {
+  list-style: none;
+  display: grid;
+  gap: 18px;
+}
+
+.permissions-list li {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 16px;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.permission-icon {
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.permissions-list strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--color-text);
+}
+
+.permissions-list p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+}
+
+.benefits-list {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+  padding-left: 0;
+}
+
+.benefits-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  color: var(--color-text);
+}
+
+.benefits-list li::before {
+  content: '✓';
+  color: var(--color-success);
+  font-weight: 700;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}

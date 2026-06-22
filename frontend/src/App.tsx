@@ -11,12 +11,12 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<Layout />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route index element={<Navigate to="/connect" replace />} />
             <Route path="connect" element={<ConnectPage />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="reports" element={<ReportsPage />} />
           </Route>
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/connect" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
