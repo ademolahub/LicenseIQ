@@ -141,6 +141,81 @@ a {
   padding: 28px;
 }
 
+.card-health {
+  display: grid;
+  gap: 20px;
+}
+
+.health-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.health-summary div {
+  background: var(--color-surface-alt);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 18px;
+}
+
+.health-summary strong {
+  display: block;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.health-summary p {
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.health-gauge {
+  position: relative;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.health-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #34d399, #2fa1d6);
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+.health-drivers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.health-driver {
+  background: var(--color-surface-alt);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.health-driver strong {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.health-driver span {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
 .card-hero {
   background: linear-gradient(135deg, #2b3a83, #3f57e3);
   color: white;
