@@ -24,7 +24,7 @@ export class MockBlobsClient implements BlobsClient {
     return this.reportsContainer.get(reportId) || null
   }
 
-  async getReportUrl(reportId: string): Promise<string> {
-    return `mock://reports/${reportId}`
+  async getReportUrl(reportId: string, _expiresInSeconds?: number): Promise<string> {
+    return `/api/reports/${reportId}`
   }
 }

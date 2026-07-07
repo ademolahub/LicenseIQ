@@ -123,7 +123,16 @@ app.post('/api/assessments/start', async (req: Request, res: Response) => {
 
 app.get('/api/assessments/latest', async (_req: Request, res: Response) => {
   try {
-    const indexes = await storage.tables.listAssessmentIndexes()
+    let indexes = await storage.tables.listAssessmentIndexes()
+
+    if (!indexes.length) {
+      if (config.MOCK_MODE) {
+        const runId = uuidv4()
+        await runAssessment('mock-tenant', runId)
+        indexes = await storage.tables.listAssessmentIndexes()
+      }
+    }
+
     if (!indexes.length) {
       return res.status(404).json({ success: false, error: 'No assessment runs found' })
     }
