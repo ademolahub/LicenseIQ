@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
 import api from '../lib/api'
+import { useToast } from '../components/ToastProvider'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function ReportsPage() {
   const [runs, setRuns] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [generatingRunId, setGeneratingRunId] = useState<string | null>(null)
+  const toast = useToast()
 
   useEffect(() => {
     setLoading(true)
@@ -20,7 +23,9 @@ export default function ReportsPage() {
           setRuns([])
           return
         }
-        setError('Unable to load assessment runs')
+        const message = typeof err === 'string' ? err : 'Unable to load assessment runs'
+        setError(message)
+        toast(message, 'error')
       })
       .finally(() => setLoading(false))
   }, [])
@@ -37,8 +42,10 @@ export default function ReportsPage() {
       } else {
         setError('Unable to generate report')
       }
-    } catch {
-      setError('Unable to generate report')
+    } catch (err) {
+      const message = typeof err === 'string' ? err : 'Unable to generate report'
+      setError(message)
+      toast(message, 'error')
     } finally {
       setGeneratingRunId(null)
     }
@@ -56,9 +63,15 @@ export default function ReportsPage() {
       <div className="card card-table">
         <h2>Past assessment runs</h2>
         {loading ? (
-          <p>Loading assessment history…</p>
+          <div className="card card-loading">
+            <LoadingSpinner />
+            <p>Loading assessment history…</p>
+          </div>
         ) : runs.length === 0 ? (
-          <p>No assessment runs found.</p>
+          <div className="card card-empty">
+            <p>No assessment runs found yet.</p>
+            <p>Run an assessment from the dashboard to generate your first report.</p>
+          </div>
         ) : (
           <table>
             <thead>

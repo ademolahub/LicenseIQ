@@ -1,29 +1,37 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMsal } from '@azure/msal-react'
 import { loginRequest } from '../auth/msalConfig'
 import { config } from '../config'
+import { useToast } from '../components/ToastProvider'
 
 function RealConnectPage() {
   const navigate = useNavigate()
   const { instance, accounts } = useMsal()
+  const toast = useToast()
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (accounts.length > 0) {
+      toast('Signed in successfully. Redirecting to dashboard.', 'success')
       navigate('/dashboard', { replace: true })
     }
-  }, [accounts, navigate])
+  }, [accounts, navigate, toast])
 
   const handleConnect = async () => {
     try {
       await instance.loginPopup(loginRequest)
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Sign-in failed'
+      setError(message)
+      toast(message, 'error')
       console.error('Login failed:', err)
     }
   }
 
   return (
     <div className="page-grid">
+      {error && <div className="card card-error">{error}</div>}
       <div className="card card-hero">
         <div>
           <h1>Connect your Microsoft 365 tenant</h1>
@@ -86,8 +94,10 @@ function RealConnectPage() {
 
 function MockConnectPage() {
   const navigate = useNavigate()
+  const toast = useToast()
 
   const handleConnect = () => {
+    toast('Mock connect complete. Redirecting to dashboard.', 'success')
     navigate('/dashboard', { replace: true })
   }
 

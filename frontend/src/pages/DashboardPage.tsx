@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import api from '../lib/api'
 import { AssessmentSnapshot } from '../../../shared/types'
+import { useToast } from '../components/ToastProvider'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 function formatCurrency(cents: number) {
   return `$${(cents / 100).toFixed(2)}`
@@ -19,6 +21,7 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [currentRunId, setCurrentRunId] = useState<string | null>(null)
+  const toast = useToast()
 
   const includedSet = useMemo(() => new Set(includedRecommendationIds), [includedRecommendationIds])
 
@@ -65,6 +68,7 @@ export default function DashboardPage() {
     } catch (err) {
       const message = typeof err === 'string' ? err : err instanceof Error ? err.message : 'Unable to load dashboard'
       setError(message)
+      toast(message, 'error')
     } finally {
       setLoading(false)
     }
@@ -119,9 +123,11 @@ export default function DashboardPage() {
       await pollAssessmentStatus(runData.runId)
       await loadAssessment(runData.runId)
       setStatusMessage('Assessment complete')
+      toast('Assessment completed successfully.', 'success')
     } catch (err) {
       const message = typeof err === 'string' ? err : err instanceof Error ? err.message : 'Unable to run assessment'
       setError(message)
+      toast(message, 'error')
     } finally {
       setRunningAssessment(false)
       setLoading(false)
@@ -146,9 +152,11 @@ export default function DashboardPage() {
       }
       window.open(reportUrl, '_blank')
       setStatusMessage('Report generated')
+      toast('PDF generated successfully.', 'success')
     } catch (err) {
       const message = typeof err === 'string' ? err : err instanceof Error ? err.message : 'Unable to generate report'
       setError(message)
+      toast(message, 'error')
     } finally {
       setGeneratingReport(false)
     }
@@ -176,6 +184,13 @@ export default function DashboardPage() {
       ) : null}
 
       {statusMessage ? <div className="card card-info">{statusMessage}</div> : null}
+
+      {loading && !assessment ? (
+        <div className="card card-loading">
+          <LoadingSpinner />
+          <p>Loading your dashboard…</p>
+        </div>
+      ) : null}
 
       <div className="card card-metric">
         <strong>Total licenses</strong>
