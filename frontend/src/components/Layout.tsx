@@ -26,7 +26,7 @@ export default function Layout() {
         <header className="topbar">
           <div>
             <div className="page-title">{navItems.find((item) => item.to === location.pathname)?.label || 'LicenseIQ'}</div>
-            <div className="page-subtitle">Operational governance for Azure licensing.</div>
+            <div className="page-subtitle">Operational governance for M365 licensing.</div>
           </div>
         </header>
         <section className="page-content">

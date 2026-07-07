@@ -12,7 +12,14 @@ export default function ReportsPage() {
           setReports([response.data.data])
         }
       })
-      .catch(() => setError('Unable to load recent reports'))
+      .catch((err) => {
+        if (err && typeof err === 'object' && 'error' in err && (err as any).error === 'No assessment runs found') {
+          setReports([])
+          return
+        }
+
+        setError('Unable to load recent reports')
+      })
   }, [])
 
   return (

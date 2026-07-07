@@ -27,7 +27,7 @@ app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', storage: config.MOCK_MODE ? 'mock' : 'azure' })
 })
 
-app.get('/recommendations', (_req: Request, res: Response) => {
+app.get('/api/recommendations', (_req: Request, res: Response) => {
   const users = getMockUsers()
   const recommendations = buildRecommendations(users, tenantRecommendationSettings)
 
