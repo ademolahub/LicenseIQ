@@ -94,11 +94,10 @@ function RealConnectPage() {
 
 function MockConnectPage() {
   const navigate = useNavigate()
-  const toast = useToast()
 
   const handleConnect = () => {
-    toast('Mock connect complete. Redirecting to dashboard.', 'success')
     navigate('/dashboard', { replace: true })
+    window.location.href = '/dashboard'
   }
 
   return (
