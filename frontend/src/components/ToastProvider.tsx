@@ -10,16 +10,20 @@ interface Toast {
 
 interface ToastContextValue {
   addToast: (message: string, type?: ToastType) => void
+  toast: (message: string, type?: ToastType) => void
 }
+
+type ToastHookValue = ToastContextValue & ((message: string, type?: ToastType) => void)
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined)
 
-export function useToast() {
+export function useToast(): ToastHookValue {
   const context = useContext(ToastContext)
   if (!context) {
     throw new Error('useToast must be used within ToastProvider')
   }
-  return context
+
+  return Object.assign(context.toast, context)
 }
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -33,14 +37,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts((current) => [...current, { id, type, message }])
   }, [])
 
+  const toast = useCallback((message: string, type: ToastType = 'info') => {
+    addToast(message, type)
+  }, [addToast])
+
   useEffect(() => {
     if (!toasts.length) {
       return
     }
 
-    const timers = toasts.map((toast) =>
+    const timers = toasts.map((toastItem) =>
       window.setTimeout(() => {
-        setToasts((current) => current.filter((item) => item.id !== toast.id))
+        setToasts((current) => current.filter((item) => item.id !== toastItem.id))
       }, 4500),
     )
 
@@ -50,7 +58,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, [toasts])
 
   return (
-    <ToastContext.Provider value={{ addToast }}>
+    <ToastContext.Provider value={{ addToast, toast }}>
       {children}
       <div className="toast-container" aria-live="polite" aria-atomic="true">
         {toasts.map((toast) => (

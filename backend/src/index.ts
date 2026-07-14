@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express'
+import cors from 'cors'
 import pino from 'pino'
 import { v4 as uuidv4 } from 'uuid'
 import { config } from './config'
@@ -21,6 +22,7 @@ const logger = pino({
 const app = express()
 const storage = getStorageClients()
 
+app.use(cors())
 app.use(express.json())
 
 app.get('/health', (_req: Request, res: Response) => {

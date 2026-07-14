@@ -8,7 +8,7 @@ import { useToast } from '../components/ToastProvider'
 function RealConnectPage() {
   const navigate = useNavigate()
   const { instance, accounts } = useMsal()
-  const toast = useToast()
+  const { toast } = useToast()
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
